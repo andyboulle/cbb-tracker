@@ -110,7 +110,9 @@ def get_season_record(team_records):
 # - Yesterday's Results
 # - Updated Team Records
 def generate_daily_report(results, team_records, daily_record, season_record):
-    report = f'Yesterday\'s Record: {daily_record}\n'
+    report = f'DAILY CBB REPORT: {(datetime.now() - timedelta(1)).strftime('%m/%d/%Y')}\n'
+    report += '---------------------------------------------\n'
+    report += f'Yesterday\'s Record: {daily_record}\n'
     report += f'Season Record: {season_record}\n\n'
     report += f'Yesterday\'s Results:\n'
     for result in results:
