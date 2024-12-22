@@ -21,7 +21,7 @@ def filter_games_by_teams(games, teams):
     filtered_games = []
     for game in games:
         if game['HomeTeam'] in teams or game['AwayTeam'] in teams:
-            if game['Status'] != 'Canceled':
+            if game['HomeTeamScore'] != None and game['AwayTeamScore'] != None:
                 filtered_games.append(game)
         
     return filtered_games
