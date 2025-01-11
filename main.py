@@ -16,6 +16,16 @@ def get_yesterdays_games(year, month, day, api_key):
 
     return games
 
+def get_todays_games(year, month, day, api_key):
+    url = f'https://api.sportsdata.io/v3/cbb/scores/json/GamesByDateFinal/{year}-{month}-{day}?key={api_key}'
+    response = requests.get(url)
+
+    games = []
+    for game in response.json():
+        games.append(game)
+
+    return games
+
 # This function filters the games to only return games that include the given teams
 def filter_games_by_teams(games, teams):
     filtered_games = []
@@ -23,6 +33,15 @@ def filter_games_by_teams(games, teams):
         if game['HomeTeam'] in teams or game['AwayTeam'] in teams:
             if game['HomeTeamScore'] != None and game['AwayTeamScore'] != None:
                 filtered_games.append(game)
+        
+    return filtered_games
+
+# This function filters the games to only return games that include the given teams
+def filter_todays_games_by_teams(games, teams):
+    filtered_games = []
+    for game in games:
+        if game['HomeTeam'] in teams or game['AwayTeam'] in teams:
+            filtered_games.append(game)
         
     return filtered_games
 
@@ -110,7 +129,7 @@ def get_season_record(team_records):
 # - Season Record
 # - Yesterday's Results
 # - Updated Team Records
-def generate_daily_report(results, team_records, daily_record, season_record):
+def generate_daily_report(results, team_records, daily_record, season_record, todays_games):
     report = f'DAILY CBB REPORT: {(datetime.now() - timedelta(1)).strftime('%m/%d/%Y')}\n'
     report += '---------------------------------------------\n'
     report += f'Yesterday\'s Record: {daily_record}\n'
@@ -124,13 +143,17 @@ def generate_daily_report(results, team_records, daily_record, season_record):
     for record in sorted_teams:
         report += f'{record["team"]}: {record["record"]}\n'
 
+    report += f'\nToday\'s Games:\n'
+    for game in todays_games:
+        report += f'{game["HomeTeam"]} vs {game["AwayTeam"]}\n'
+
     return report
 
 # This function sends the report as an email
 def send_report_email(report):
     msg = MIMEMultipart()
     msg['From'] = config['FROM_EMAIL']
-    msg['To'] = config['TO_EMAIL']
+    msg['To'] = ', '.join(config['TO_EMAILS'])
     msg['Subject'] = 'Daily CBB Report'
     msg.attach(MIMEText(report, 'plain'))
 
@@ -163,8 +186,18 @@ def main():
     team_records = get_teams_records(teams)
     season_record = get_season_record(team_records)
 
+    # Get today's games
+    todays_date = datetime.now()
+    todays_date_str = todays_date.strftime('%Y-%b-%d')
+    todays_date_parts = todays_date_str.split('-')
+    year = todays_date_parts[0]
+    month = todays_date_parts[1]
+    day = todays_date_parts[2]
+    todays_games = get_todays_games(year, month, day, api_key)
+    filtered_todays_games = filter_todays_games_by_teams(todays_games, team_abbreviations)
+
     # Generate and send the daily report
-    report = generate_daily_report(game_results, team_records, daily_record, season_record)
+    report = generate_daily_report(game_results, team_records, daily_record, season_record, filtered_todays_games)
     send_report_email(report)
     print(report)
 
